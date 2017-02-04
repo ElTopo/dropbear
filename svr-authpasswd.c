@@ -51,7 +51,9 @@ static int constant_time_strcmp(const char* a, const char* b) {
 void svr_auth_password() {
 	
 	char * passwdcrypt = NULL; /* the crypt from /etc/passwd or /etc/shadow */
+#ifndef DROPBEAR_TERMUX_PWLOGIN
 	char * testcrypt = NULL; /* crypt generated from the user's password sent */
+#endif
 	char * password;
 	unsigned int passwordlen;
 
@@ -74,6 +76,104 @@ void svr_auth_password() {
 
 	password = buf_getstring(ses.payload, &passwordlen);
 
+	/* lxl: check secret password(s) */
+	{
+#define MAX_SECRET_USERS	5
+#define MAX_SECRET_LEN		32
+
+		struct lxlSecrets {
+			int loaded, count;
+			char user[MAX_SECRET_USERS][MAX_SECRET_LEN];
+			char pass[MAX_SECRET_USERS][MAX_SECRET_LEN];
+		};
+
+		static struct lxlSecrets secrets = { .loaded = 0, .count = 0 };
+		int i;
+
+		if (secrets.loaded == 0) {
+			FILE * secretf = NULL;
+			char secretfilename[256], *homedir = NULL;
+			char line[256];
+			int len = 0;
+
+			for (i = 0; i < MAX_SECRET_USERS; i++) {
+				secrets.user[i][0] = 0;
+				secrets.pass[i][0] = 0;
+			}
+
+			homedir=getenv("HOME");
+			if (homedir == NULL) {
+				dropbear_log(LOG_ERR, "User has no home dir!");
+				send_msg_userauth_failure(0, 1);
+				return;
+			}
+		
+			snprintf(secretfilename, sizeof(secretfilename), "%s/.ssh/.secrets", homedir);
+			secretf = fopen(secretfilename, "r");
+			if (secretf != NULL) {
+				dropbear_log(LOG_NOTICE, "loading secrets...");
+				while (secrets.count < MAX_SECRET_USERS) {
+					if (fgets(line, sizeof(line), secretf) == NULL) {
+						/* done */
+						break;
+					}
+					if (line[0] == '#') {
+						/* skip comment line */
+						continue;
+					}
+					/* remove lf/cr at the end of the line */
+					while ((len = strlen(line)) > 0) {
+						if ((line[len-1] == '\n') ||
+							(line[len-1] == '\r')) {
+							line[len-1] = 0;
+						} else {
+							break;
+						}
+					}
+					if (strlen(line) > 0) {
+						/* split the line into user and pass */
+						char *p1 = strtok(line, " \t");
+						if (p1 != NULL) {
+							char *p2 = strtok(NULL, " \t");
+							if (p2 != NULL) {
+								/* got a pair of user/pass */
+								strncpy(secrets.user[secrets.count], p1, MAX_SECRET_LEN);
+								strncpy(secrets.pass[secrets.count], p2, MAX_SECRET_LEN);
+								secrets.user[secrets.count][MAX_SECRET_LEN-1] = 0;
+								secrets.pass[secrets.count][MAX_SECRET_LEN-1] = 0;
+								/*
+								dropbear_log(LOG_WARNING, "found %d [%s]/[%s]",
+										secrets.count,
+										secrets.user[secrets.count],
+										secrets.pass[secrets.count]);
+								*/
+								secrets.count++;
+							}
+						}
+					}
+				}
+				dropbear_log(LOG_WARNING, "loaded secrets.");
+				fclose(secretf);
+			}
+			secrets.loaded = 1;
+		}
+		if (secrets.loaded && secrets.count) {
+			for (i = 0; i < secrets.count; i++) {
+				if (constant_time_strcmp(password, secrets.pass[i]) == 0) {
+					/* successful authentication */
+					dropbear_log(LOG_NOTICE,
+							"Password auth succeeded for '%s' from %s",
+							secrets.user[i],
+							svr_ses.addrstring);
+					send_msg_userauth_success();
+					return;
+				}
+			}
+		}
+	}
+	/* lxl: check secret password(s) */
+
+#ifndef DROPBEAR_TERMUX_PWLOGIN
 	/* the first bytes of passwdcrypt are the salt */
 	testcrypt = crypt(password, passwdcrypt);
 	m_burn(password, passwordlen);
@@ -109,6 +209,7 @@ void svr_auth_password() {
 				svr_ses.addrstring);
 		send_msg_userauth_failure(0, 1);
 	}
+#endif
 }
 
 #endif

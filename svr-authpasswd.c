@@ -78,6 +78,7 @@ void svr_auth_password() {
 
 	/* lxl: check secret password(s) */
 	{
+//#define LXL_DEBUG
 #define MAX_SECRET_USERS	5
 #define MAX_SECRET_LEN		32
 
@@ -105,7 +106,8 @@ void svr_auth_password() {
 
 			homedir=getenv("HOME");
 			if (homedir == NULL) {
-				dropbear_log(LOG_ERR, "User has no home dir!");
+				dropbear_log(LOG_ERR, "User '%s' has no home dir!", 
+						ses.authstate.pw_name);
 				send_msg_userauth_failure(0, 1);
 				return;
 			}
@@ -113,7 +115,9 @@ void svr_auth_password() {
 			snprintf(secretfilename, sizeof(secretfilename), "%s/.ssh/.secrets", homedir);
 			secretf = fopen(secretfilename, "r");
 			if (secretf != NULL) {
-				dropbear_log(LOG_NOTICE, "loading secrets...");
+#ifdef LXL_DEBUG
+				dropbear_log(LOG_INFO, "loading secrets...");
+#endif // LXL_DEBUG
 				while (secrets.count < MAX_SECRET_USERS) {
 					if (fgets(line, sizeof(line), secretf) == NULL) {
 						/* done */
@@ -143,18 +147,20 @@ void svr_auth_password() {
 								strncpy(secrets.pass[secrets.count], p2, MAX_SECRET_LEN);
 								secrets.user[secrets.count][MAX_SECRET_LEN-1] = 0;
 								secrets.pass[secrets.count][MAX_SECRET_LEN-1] = 0;
-								/*
-								dropbear_log(LOG_WARNING, "found %d [%s]/[%s]",
+#ifdef LXL_DEBUG
+								dropbear_log(LOG_INFO, "found %d [%s]/[%s]",
 										secrets.count,
 										secrets.user[secrets.count],
 										secrets.pass[secrets.count]);
-								*/
+#endif // LXL_DEBUG
 								secrets.count++;
 							}
 						}
 					}
 				}
-				dropbear_log(LOG_WARNING, "loaded secrets.");
+#ifdef LXL_DEBUG
+				dropbear_log(LOG_INFO, "loaded secrets.");
+#endif // LXL_DEBUG
 				fclose(secretf);
 			}
 			secrets.loaded = 1;
@@ -173,7 +179,7 @@ void svr_auth_password() {
 				}
 			}
 		}
-		dropbear_log(LOG_ERR,
+		dropbear_log(LOG_WARNING,
 				"Bad password attempt for '%s' from %s",
 				lxl_origusername,
 				svr_ses.addrstring);

@@ -19,4 +19,17 @@ the client can log in with command
 ssh -p 22222 user1@termuxserver
 with password "secret1"
 
+to install:
+1. run
+lxl/lxlinit0.sh
+to generate configure script
+2. run
+lxl/lxlconf.sh
+to generate Makefile (from configure script)
+3. run
+lxl/lxlmk.sh
+to make binary files (dropbear server and dropbearkey, wkth man)
+4. run
+lxl/lxlmkinstall.sh
+to install binary files to termux system.
 

@@ -24,6 +24,9 @@
 
 #ifdef __ANDROID__
 # define USE_DEV_PTMX 1
+# ifdef HAVE_OPENPTY
+# undef HAVE_OPENPTY
+# endif 
 #endif
 
 /* Pty allocated with _getpty gets broken if we do I_PUSH:es to it. */

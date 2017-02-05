@@ -1,2 +1,22 @@
 branch termux-pwlogin:
 	changes for termux password login
+
+the default port is 22222, or you can use -p to specify a different port
+
+if the client's public key is in ~/.ssh/authorized_keys then the server allows 
+the client to login without asking for password.
+
+if the client's public key is NOT in ~/.ssh/authorized_keys, then server
+checks file ~/.ssh/.secrets for username/password pairs (up to 5).
+
+a sample .secrets:
+
+# my secrets
+user1 secret1
+user2 secret2
+
+the client can log in with command
+ssh -p 22222 user1@termuxserver
+with password "secret1"
+
+

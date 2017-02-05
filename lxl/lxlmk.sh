@@ -3,4 +3,4 @@
 ME=$(readlink -f $0)
 WORKDIR=$(dirname $ME)
 
-cd $WORKDIR/.. && make PROGRAMS="dropbear dropbearkey"
+cd $WORKDIR/.. && make PROGRAMS="dropbear dropbearkey" $*

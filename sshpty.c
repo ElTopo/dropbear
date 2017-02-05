@@ -22,6 +22,10 @@
 #include "errno.h"
 #include "sshpty.h"
 
+#ifdef __ANDROID__
+# define USE_DEV_PTMX 1
+#endif
+
 /* Pty allocated with _getpty gets broken if we do I_PUSH:es to it. */
 #if defined(HAVE__GETPTY) || defined(HAVE_OPENPTY)
 #undef HAVE_DEV_PTMX
@@ -380,6 +384,7 @@ pty_setowner(struct passwd *pw, const char *tty_name)
 				tty_name, strerror(errno));
 	}
 
+#ifndef __ANDROID__
 	if (st.st_uid != pw->pw_uid || st.st_gid != gid) {
 		if (chown(tty_name, pw->pw_uid, gid) < 0) {
 			if (errno == EROFS &&
@@ -409,4 +414,5 @@ pty_setowner(struct passwd *pw, const char *tty_name)
 			}
 		}
 	}
+#endif
 }

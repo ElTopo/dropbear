@@ -32,6 +32,12 @@
 #include "packet.h"
 #include "runopts.h"
 
+#ifdef __ANDROID__
+char * getpass (const char *prompt) {
+	return "";
+}
+#endif
+
 void cli_authinitialise() {
 
 	memset(&ses.authstate, 0, sizeof(ses.authstate));

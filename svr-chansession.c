@@ -914,6 +914,8 @@ static void execchild(void *user_data) {
 #endif
 
 	/* clear environment */
+	/* termux: do not clear environment on android */
+#ifndef __ANDROID__
 	/* if we're debugging using valgrind etc, we need to keep the LD_PRELOAD
 	 * etc. This is hazardous, so should only be used for debugging. */
 #ifndef DEBUG_VALGRIND
@@ -926,6 +928,7 @@ static void execchild(void *user_data) {
 	}
 #endif /* HAVE_CLEARENV */
 #endif /* DEBUG_VALGRIND */
+#endif /* __ANDROID__ */
 
 	/* We can only change uid/gid as root ... */
 	if (getuid() == 0) {
@@ -950,13 +953,15 @@ static void execchild(void *user_data) {
 			dropbear_exit("Couldn't	change user as non-root");
 		}
 	}
-
+	/* termux: do not modify environment since we did not clean it */
+#ifndef __ANDROID__
 	/* set env vars */
 	addnewvar("USER", ses.authstate.pw_name);
 	addnewvar("LOGNAME", ses.authstate.pw_name);
 	addnewvar("HOME", ses.authstate.pw_dir);
 	addnewvar("SHELL", get_user_shell());
 	addnewvar("PATH", DEFAULT_PATH);
+#endif
 	if (chansess->term != NULL) {
 		addnewvar("TERM", chansess->term);
 	}

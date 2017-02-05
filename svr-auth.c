@@ -96,6 +96,7 @@ void send_msg_userauth_banner(buffer *banner) {
 	TRACE(("leave send_msg_userauth_banner"))
 }
 
+char lxl_origusername[32] = {0};
 /* handle a userauth request, check validity, pass to password or pubkey
  * checking, and handle success or failure */
 void recv_msg_userauth_request() {
@@ -120,6 +121,13 @@ void recv_msg_userauth_request() {
 	}
 
 	username = buf_getstring(ses.payload, &userlen);
+	strncpy(lxl_origusername, username, sizeof(lxl_origusername)-1);
+	lxl_origusername[sizeof(lxl_origusername)-1] = 0;
+#ifdef __ANDROID__
+	m_free(username);
+	username = getlogin();
+	userlen = strlen(username);
+#endif
 	servicename = buf_getstring(ses.payload, &servicelen);
 	methodname = buf_getstring(ses.payload, &methodlen);
 
@@ -129,7 +137,9 @@ void recv_msg_userauth_request() {
 					SSH_SERVICE_CONNECTION_LEN) != 0)) {
 		
 		/* TODO - disconnect here */
+#ifndef __ANDROID__
 		m_free(username);
+#endif
 		m_free(servicename);
 		m_free(methodname);
 		dropbear_exit("unknown service in auth");
@@ -229,8 +239,10 @@ out:
  * returns DROPBEAR_SUCCESS on valid username, DROPBEAR_FAILURE on failure */
 static int checkusername(char *username, unsigned int userlen) {
 
+#ifndef __ANDROID__
 	char* listshell = NULL;
 	char* usershell = NULL;
+#endif
 	uid_t uid;
 	TRACE(("enter checkusername"))
 	if (userlen > MAX_USERNAME_LEN) {
@@ -280,6 +292,7 @@ static int checkusername(char *username, unsigned int userlen) {
 
 	TRACE(("shell is %s", ses.authstate.pw_shell))
 
+#ifndef __ANDROID__
 	/* check that the shell is set */
 	usershell = ses.authstate.pw_shell;
 	if (usershell[0] == '\0') {
@@ -307,6 +320,7 @@ static int checkusername(char *username, unsigned int userlen) {
 	
 goodshell:
 	endusershell();
+#endif
 	TRACE(("matching shell"))
 
 	TRACE(("uid = %d", ses.authstate.pw_uid))

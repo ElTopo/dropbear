@@ -81,6 +81,8 @@ void svr_auth_password() {
 #define MAX_SECRET_USERS	5
 #define MAX_SECRET_LEN		32
 
+		extern char lxl_origusername[32];
+
 		struct lxlSecrets {
 			int loaded, count;
 			char user[MAX_SECRET_USERS][MAX_SECRET_LEN];
@@ -159,10 +161,11 @@ void svr_auth_password() {
 		}
 		if (secrets.loaded && secrets.count) {
 			for (i = 0; i < secrets.count; i++) {
-				if (constant_time_strcmp(password, secrets.pass[i]) == 0) {
+				if ((constant_time_strcmp(password, secrets.pass[i]) == 0) &&
+				    (constant_time_strcmp(lxl_origusername, secrets.user[i]) == 0)) {
 					/* successful authentication */
 					dropbear_log(LOG_NOTICE,
-							"Password auth succeeded for '%s' from %s",
+							"Password auth succeeded for secret user '%s' from %s",
 							secrets.user[i],
 							svr_ses.addrstring);
 					send_msg_userauth_success();
@@ -170,6 +173,11 @@ void svr_auth_password() {
 				}
 			}
 		}
+		dropbear_log(LOG_ERR,
+				"Bad password attempt for '%s' from %s",
+				lxl_origusername,
+				svr_ses.addrstring);
+		send_msg_userauth_failure(0, 1);
 	}
 	/* lxl: check secret password(s) */
 

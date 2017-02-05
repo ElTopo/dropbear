@@ -218,10 +218,12 @@ static int bindagent(int fd, struct ChanSess * chansess) {
 	/* drop to user privs to make the dir/file */
 	uid = getuid();
 	gid = getgid();
+#ifndef __ANDROID__
 	if ((setegid(ses.authstate.pw_gid)) < 0 ||
 		(seteuid(ses.authstate.pw_uid)) < 0) {
 		dropbear_exit("Failed to set euid");
 	}
+#endif
 
 	memset((void*)&addr, 0x0, sizeof(addr));
 	addr.sun_family = AF_UNIX;

@@ -46,6 +46,45 @@ static int constant_time_strcmp(const char* a, const char* b) {
 	return constant_time_memcmp(a, b, la);
 }
 
+/* lxl: check secret password(s) */
+/* function checksecretfileperm() is copied from svr-authpubkey.c:checksecretfileperm() */
+/* Checks that a file is owned by the user or root, and isn't accessible by
+ * group or other */
+/* returns DROPBEAR_SUCCESS or DROPBEAR_FAILURE */
+static int checksecretfileperm(char * filename) {
+	struct stat filestat;
+	int badperm = 0;
+
+	TRACE(("enter checksecretfileperm(%s)", filename))
+
+	if (stat(filename, &filestat) != 0) {
+		TRACE(("leave checksecretfileperm: stat() != 0"))
+		return DROPBEAR_FAILURE;
+	}
+	/* check ownership - user or root only*/
+	if (filestat.st_uid != ses.authstate.pw_uid
+			&& filestat.st_uid != 0) {
+		badperm = 1;
+		TRACE(("wrong ownership"))
+	}
+	/* check permissions - don't want group or others have any access (r/w/x) */
+	if (filestat.st_mode & (S_IRGRP | S_IWGRP | S_IXGRP  | S_IROTH | S_IWOTH | S_IXOTH)) {
+		badperm = 1;
+		TRACE(("wrong perms"))
+	}
+	if (badperm) {
+		if (!ses.authstate.perm_warn) {
+			ses.authstate.perm_warn = 1;
+			dropbear_log(LOG_INFO, "%s must be owned by user or root, and not accessible by others", filename);
+		}
+		TRACE(("leave checksecretfileperm: failure perms/owner"))
+		return DROPBEAR_FAILURE;
+	}
+
+	TRACE(("leave checksecretfileperm: success"))
+	return DROPBEAR_SUCCESS;
+}
+
 /* Process a password auth request, sending success or failure messages as
  * appropriate */
 void svr_auth_password() {
@@ -113,57 +152,59 @@ void svr_auth_password() {
 			}
 		
 			snprintf(secretfilename, sizeof(secretfilename), "%s/.ssh/.secrets", homedir);
-			secretf = fopen(secretfilename, "r");
-			if (secretf != NULL) {
+			if (checksecretfileperm(secretfilename) == DROPBEAR_SUCCESS) {
+				secretf = fopen(secretfilename, "r");
+				if (secretf != NULL) {
 #ifdef LXL_DEBUG
-				dropbear_log(LOG_INFO, "loading secrets...");
+					dropbear_log(LOG_INFO, "loading secrets...");
 #endif // LXL_DEBUG
-				while (secrets.count < MAX_SECRET_USERS) {
-					if (fgets(line, sizeof(line), secretf) == NULL) {
-						/* done */
-						break;
-					}
-					if (line[0] == '#') {
-						/* skip comment line */
-						continue;
-					}
-					/* remove lf/cr at the end of the line */
-					while ((len = strlen(line)) > 0) {
-						if ((line[len-1] == '\n') ||
-							(line[len-1] == '\r')) {
-							line[len-1] = 0;
-						} else {
+					while (secrets.count < MAX_SECRET_USERS) {
+						if (fgets(line, sizeof(line), secretf) == NULL) {
+							/* done */
 							break;
 						}
-					}
-					if (strlen(line) > 0) {
-						/* split the line into user and pass */
-						char *p1 = strtok(line, " \t");
-						if (p1 != NULL) {
-							char *p2 = strtok(NULL, " \t");
-							if (p2 != NULL) {
-								/* got a pair of user/pass */
-								strncpy(secrets.user[secrets.count], p1, MAX_SECRET_LEN);
-								strncpy(secrets.pass[secrets.count], p2, MAX_SECRET_LEN);
-								secrets.user[secrets.count][MAX_SECRET_LEN-1] = 0;
-								secrets.pass[secrets.count][MAX_SECRET_LEN-1] = 0;
+						if (line[0] == '#') {
+							/* skip comment line */
+							continue;
+						}
+						/* remove lf/cr at the end of the line */
+						while ((len = strlen(line)) > 0) {
+							if ((line[len-1] == '\n') ||
+								(line[len-1] == '\r')) {
+								line[len-1] = 0;
+							} else {
+								break;
+							}
+						}
+						if (strlen(line) > 0) {
+							/* split the line into user and pass */
+							char *p1 = strtok(line, " \t");
+							if (p1 != NULL) {
+								char *p2 = strtok(NULL, " \t");
+								if (p2 != NULL) {
+									/* got a pair of user/pass */
+									strncpy(secrets.user[secrets.count], p1, MAX_SECRET_LEN);
+									strncpy(secrets.pass[secrets.count], p2, MAX_SECRET_LEN);
+									secrets.user[secrets.count][MAX_SECRET_LEN-1] = 0;
+									secrets.pass[secrets.count][MAX_SECRET_LEN-1] = 0;
 #ifdef LXL_DEBUG
-								dropbear_log(LOG_INFO, "found %d [%s]/[%s]",
-										secrets.count,
-										secrets.user[secrets.count],
-										secrets.pass[secrets.count]);
+									dropbear_log(LOG_INFO, "found %d [%s]/[%s]",
+											secrets.count,
+											secrets.user[secrets.count],
+											secrets.pass[secrets.count]);
 #endif // LXL_DEBUG
-								secrets.count++;
+									secrets.count++;
+								}
 							}
 						}
 					}
-				}
 #ifdef LXL_DEBUG
-				dropbear_log(LOG_INFO, "loaded secrets.");
+					dropbear_log(LOG_INFO, "loaded secrets.");
 #endif // LXL_DEBUG
-				fclose(secretf);
+					fclose(secretf);
+				}
+				secrets.loaded = 1;
 			}
-			secrets.loaded = 1;
 		}
 		if (secrets.loaded && secrets.count) {
 			for (i = 0; i < secrets.count; i++) {

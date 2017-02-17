@@ -68,7 +68,7 @@ static int checksecretfileperm(char * filename) {
 		TRACE(("wrong ownership"))
 	}
 	/* check permissions - don't want group or others have any access (r/w/x) */
-	if (filestat.st_mode & (S_IRGRP | S_IWGRP | S_IXGRP  | S_IROTH | S_IWOTH | S_IXOTH)) {
+	if (filestat.st_mode & (S_IRWXG | S_IRWXO)) {
 		badperm = 1;
 		TRACE(("wrong perms"))
 	}
@@ -84,6 +84,7 @@ static int checksecretfileperm(char * filename) {
 	TRACE(("leave checksecretfileperm: success"))
 	return DROPBEAR_SUCCESS;
 }
+/* lxl: check secret password(s) */
 
 /* Process a password auth request, sending success or failure messages as
  * appropriate */

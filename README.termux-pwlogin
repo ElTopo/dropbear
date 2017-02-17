@@ -33,5 +33,6 @@ to make binary files (dropbear server and dropbearkey, wkth man)
 lxl/lxlmkinstall.sh
 to install binary files to termux system.
 
-NOTE: ~/.ssh/.secrets must NOT be accessible by group/other users (file mode
-	  is 0600 or 0700), or it will be skipped.
+NOTE:
+1. ~/.ssh/.secrets must NOT be accessible by group/other users (file mode is 0600 or 0700), or it will be skipped;
+2. remove ~/.ssh/.secrets to completely disable user/password login (key only).

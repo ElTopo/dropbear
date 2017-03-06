@@ -576,9 +576,11 @@ void setnonblocking(int fd) {
 }
 
 void disallow_core() {
+#if 0 //lxl
 	struct rlimit lim;
 	lim.rlim_cur = lim.rlim_max = 0;
 	setrlimit(RLIMIT_CORE, &lim);
+#endif // 0 //lxl
 }
 
 /* Returns DROPBEAR_SUCCESS or DROPBEAR_FAILURE, with the result in *val */

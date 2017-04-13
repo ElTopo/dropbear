@@ -216,6 +216,7 @@ void svr_auth_password() {
 							"Password auth succeeded for secret user '%s' from %s",
 							secrets.user[i],
 							svr_ses.addrstring);
+					addnewvar("SECRETUSER", secrets.user[i]);
 					send_msg_userauth_success();
 					return;
 				}

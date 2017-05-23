@@ -107,7 +107,7 @@ parse_ciphers_macs()
 #endif
 
 void print_version() {
-	fprintf(stderr, "Dropbear v%s\n", DROPBEAR_VERSION);
+	fprintf(stderr, "Dropbear v%s\n", DROPBEARLXLPW_VERSION);
 }
 
 

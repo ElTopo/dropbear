@@ -97,7 +97,7 @@ static void printhelp(const char * progname) {
 #if DEBUG_TRACE
 					"-v		verbose (compiled with DEBUG_TRACE)\n"
 #endif
-					,DROPBEAR_VERSION, progname,
+					,DROPBEARLXLPW_VERSION, progname,
 #if DROPBEAR_DSS
 					DSS_PRIV_FILENAME,
 #endif

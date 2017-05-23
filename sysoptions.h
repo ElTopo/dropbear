@@ -7,7 +7,9 @@
 #define DROPBEAR_VERSION "2017.75"
 #endif
 
-#define LOCAL_IDENT "SSH-2.0-dropbear_" DROPBEAR_VERSION
+#define DROPBEARLXLPW_VERSION DROPBEAR_VERSION "-lxlpw"
+
+#define LOCAL_IDENT "SSH-2.0-dropbear_" DROPBEARLXLPW_VERSION
 #define PROGNAME "dropbear"
 
 /* Spec recommends after one hour or 1 gigabyte of data. One hour

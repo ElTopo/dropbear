@@ -96,7 +96,7 @@ static void printhelp() {
 #if DEBUG_TRACE
 					"-v    verbose (compiled with DEBUG_TRACE)\n"
 #endif
-					,DROPBEAR_VERSION, cli_opts.progname,
+					,DROPBEARLXLPW_VERSION, cli_opts.progname,
 #if DROPBEAR_CLI_PUBKEY_AUTH
 					DROPBEAR_DEFAULT_CLI_AUTHKEY,
 #endif

@@ -14,6 +14,9 @@ ifndef PREFIX
   PREFIX=
 endif
 
+# for termux only!!!
+PREFIX=/data/data/com.termux/files/usr/bin/
+
 ifeq ($(CC),cc)
   CC = $(PREFIX)gcc
 endif

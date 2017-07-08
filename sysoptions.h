@@ -42,10 +42,10 @@
 
 /* Minimum key sizes for DSS and RSA */
 #ifndef MIN_DSS_KEYLEN
-#define MIN_DSS_KEYLEN 512
+#define MIN_DSS_KEYLEN 1024
 #endif
 #ifndef MIN_RSA_KEYLEN
-#define MIN_RSA_KEYLEN 512
+#define MIN_RSA_KEYLEN 1024
 #endif
 
 #define MAX_BANNER_SIZE 2000 /* this is 25*80 chars, any more is foolish */
@@ -237,10 +237,12 @@
 #define DROPBEAR_VFORK 1
 #endif
 
+#ifndef DROPBEAR_LISTEN_BACKLOG
 #if MAX_UNAUTH_CLIENTS > MAX_CHANNELS
 #define DROPBEAR_LISTEN_BACKLOG MAX_UNAUTH_CLIENTS
 #else
 #define DROPBEAR_LISTEN_BACKLOG MAX_CHANNELS
+#endif
 #endif
 
 #ifndef DROPBEAR_NONE_CIPHER

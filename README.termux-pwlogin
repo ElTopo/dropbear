@@ -1,3 +1,8 @@
+This project is archived because termux's openssh now supports password login,
+use 'passwd' command to change password, then termux's sshd will ask password.
+
+=== old README.termux-pwlogin ===
+
 branch termux-pwlogin:
 	changes for termux password login
 
